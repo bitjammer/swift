@@ -225,6 +225,7 @@ void State::initializeConsumingUse(BranchPropagatedUser consumingUser,
     }
     llvm::errs() << "User: " << *consumingUser << "Block: bb"
                  << userBlock->getDebugID() << "\n\n";
+    beginBlock->getParent()->dump();
   });
 }
 

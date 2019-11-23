@@ -104,7 +104,6 @@ static ValueDecl *getElementaryFunctionRequirement(
 // it if it does not exist.
 static ConstructorDecl *getOrCreateEffectiveMemberwiseInitializer(
     ASTContext &ctx, NominalTypeDecl *nominal) {
-  auto &C = nominal->getASTContext();
   if (auto *initDecl = nominal->getEffectiveMemberwiseInitializer())
     return initDecl;
   auto *initDecl = createMemberwiseImplicitConstructor(ctx, nominal);

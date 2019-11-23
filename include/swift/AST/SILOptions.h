@@ -151,7 +151,11 @@ public:
 
   /// Should the default pass pipelines strip ownership during the diagnostic
   /// pipeline or after serialization.
-  bool StripOwnershipAfterSerialization = true;
+  // SWIFT_ENABLE_TENSORFLOW
+  // Revert `StripOwnershipAfterSerialization` to default false due to AutoDiff
+  // test regressions.
+  bool StripOwnershipAfterSerialization = false;
+  // SWIFT_ENABLE_TENSORFLOW END
 
   /// The name of the file to which the backend should save YAML optimization
   /// records.

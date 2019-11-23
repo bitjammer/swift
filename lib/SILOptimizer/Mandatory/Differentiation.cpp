@@ -3212,7 +3212,7 @@ static SILFunction *getOrCreateReabstractionThunk(SILOptFunctionBuilder &fb,
       Type(), module.getSwiftModule());
 
   auto *thunk = fb.getOrCreateSharedFunction(
-      loc, name, thunkDeclType, IsBare, IsTransparent, IsSerialized,
+      loc, name, thunkDeclType, IsBare, IsNotTransparent, IsSerialized,
       ProfileCounter(), IsReabstractionThunk, IsNotDynamic);
   if (!thunk->empty())
     return thunk;
@@ -7967,12 +7967,19 @@ bool VJPEmitter::run() {
   // arguments. We emit an `end_borrow` immediately past each destination
   // argument's lifetime-ending uses.
   for (auto &trampolinedArgPair : trampolinedGuaranteedPhiArguments) {
+    bool yes = true;
     for (auto *destArgUse : trampolinedArgPair.destinationArgument->getUses()) {
       if (auto *lifetimeEnd = dyn_cast<EndBorrowInst>(destArgUse->getUser())) {
         getBuilder().setInsertionPoint(lifetimeEnd->getParentBlock(),
                                        std::next(lifetimeEnd->getIterator()));
         getBuilder().emitEndBorrowOperation(
             lifetimeEnd->getLoc(), trampolinedArgPair.trampolineArgument);
+#if 0
+        if (yes)
+          getBuilder().emitEndBorrowOperation(
+                                              lifetimeEnd->getLoc(), trampolinedArgPair.trampolineArgument);
+        yes = !yes;
+#endif
       }
     }
   }
