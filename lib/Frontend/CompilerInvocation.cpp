@@ -59,35 +59,9 @@ void CompilerInvocation::setMainExecutablePath(StringRef Path) {
   DiagnosticOpts.DiagnosticDocumentationPath = DiagnosticDocsPath.str();
 }
 
-/// If we haven't explicitly passed -prebuilt-module-cache-path, set it to
-/// the default value of <resource-dir>/<platform>/prebuilt-modules.
-/// @note This should be called once, after search path options and frontend
-///       options have been parsed.
-static void setDefaultPrebuiltCacheIfNecessary(
-  FrontendOptions &frontendOpts, const SearchPathOptions &searchPathOpts,
-  const llvm::Triple &triple) {
-
-  if (!frontendOpts.PrebuiltModuleCachePath.empty())
-    return;
-  if (searchPathOpts.RuntimeResourcePath.empty())
-    return;
-
-  SmallString<64> defaultPrebuiltPath{searchPathOpts.RuntimeResourcePath};
-  StringRef platform;
-  if (tripleIsMacCatalystEnvironment(triple)) {
-    // The prebuilt cache for macCatalyst is the same as the one for macOS, not iOS
-    // or a separate location of its own.
-    platform = "macosx";
-  } else {
-    platform = getPlatformNameForTriple(triple);
-  }
-  llvm::sys::path::append(defaultPrebuiltPath, platform, "prebuilt-modules");
-  frontendOpts.PrebuiltModuleCachePath = defaultPrebuiltPath.str();
-}
-
-static void updateRuntimeLibraryPaths(SearchPathOptions &SearchPathOpts,
-                                      llvm::Triple &Triple) {
+void CompilerInvocation::updateRuntimeLibraryPaths() {
   llvm::SmallString<128> LibPath(SearchPathOpts.RuntimeResourcePath);
+  auto Triple = LangOpts.Target;
 
   StringRef LibSubDir = getPlatformNameForTriple(Triple);
   if (tripleIsMacCatalystEnvironment(Triple))
@@ -129,6 +103,25 @@ static void updateRuntimeLibraryPaths(SearchPathOptions &SearchPathOpts,
   }
 }
 
+void CompilerInvocation::setDefaultPrebuiltCacheIfNecessary() {
+  if (!FrontendOpts.PrebuiltModuleCachePath.empty())
+    return;
+  if (SearchPathOpts.RuntimeResourcePath.empty())
+    return;
+
+  SmallString<64> defaultPrebuiltPath{SearchPathOpts.RuntimeResourcePath};
+  StringRef platform;
+  if (tripleIsMacCatalystEnvironment(LangOpts.Target)) {
+    // The prebuilt cache for macCatalyst is the same as the one for macOS, not iOS
+    // or a separate location of its own.
+    platform = "macosx";
+  } else {
+    platform = getPlatformNameForTriple(LangOpts.Target);
+  }
+  llvm::sys::path::append(defaultPrebuiltPath, platform, "prebuilt-modules");
+  FrontendOpts.PrebuiltModuleCachePath = defaultPrebuiltPath.str();
+}
+
 static void
 setIRGenOutputOptsFromFrontendOptions(IRGenOptions &IRGenOpts,
                                       const FrontendOptions &FrontendOpts) {
@@ -159,6 +152,7 @@ setIRGenOutputOptsFromFrontendOptions(IRGenOptions &IRGenOpts,
   }
 }
 
+
 static void
 setBridgingHeaderFromFrontendOptions(ClangImporterOptions &ImporterOpts,
                                      const FrontendOptions &FrontendOpts) {
@@ -179,7 +173,7 @@ setBridgingHeaderFromFrontendOptions(ClangImporterOptions &ImporterOpts,
 
 void CompilerInvocation::setRuntimeResourcePath(StringRef Path) {
   SearchPathOpts.RuntimeResourcePath = Path;
-  updateRuntimeLibraryPaths(SearchPathOpts, LangOpts.Target);
+  updateRuntimeLibraryPaths();
 }
 
 void CompilerInvocation::setTargetTriple(StringRef Triple) {
@@ -188,12 +182,12 @@ void CompilerInvocation::setTargetTriple(StringRef Triple) {
 
 void CompilerInvocation::setTargetTriple(const llvm::Triple &Triple) {
   LangOpts.setTarget(Triple);
-  updateRuntimeLibraryPaths(SearchPathOpts, LangOpts.Target);
+  updateRuntimeLibraryPaths();
 }
 
 void CompilerInvocation::setSDKPath(const std::string &Path) {
   SearchPathOpts.SDKPath = Path;
-  updateRuntimeLibraryPaths(SearchPathOpts, LangOpts.Target);
+  updateRuntimeLibraryPaths();
 }
 
 SourceFileKind CompilerInvocation::getSourceFileKind() const {
@@ -1566,9 +1560,8 @@ bool CompilerInvocation::parseArgs(
     return true;
   }
 
-  updateRuntimeLibraryPaths(SearchPathOpts, LangOpts.Target);
-  setDefaultPrebuiltCacheIfNecessary(FrontendOpts, SearchPathOpts,
-                                     LangOpts.Target);
+  updateRuntimeLibraryPaths();
+  setDefaultPrebuiltCacheIfNecessary();
 
   // Now that we've parsed everything, setup some inter-option-dependent state.
   setIRGenOutputOptsFromFrontendOptions(IRGenOpts, FrontendOpts);

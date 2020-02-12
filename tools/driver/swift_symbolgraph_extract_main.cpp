@@ -71,6 +71,11 @@ Xcc("Xcc", llvm::cl::desc("Pass the following command-line flag to Clang"),
          llvm::cl::cat(Category));
 
 static llvm::cl::opt<std::string>
+ResourceDir("resource-dir",
+            llvm::cl::desc("The directory that holds the compiler resource files"),
+            llvm::cl::cat(Category));
+
+static llvm::cl::opt<std::string>
 OutputPath("o", llvm::cl::desc("Symbol Graph JSON Output Path (Required)"), llvm::cl::cat(Category));
 } // end namespace options
 
@@ -159,7 +164,16 @@ int swift_symbolgraph_extract_main(ArrayRef<const char *> Args, const char *Argv
       return EXIT_FAILURE;
     }
   }
-
+  
+  if (!options::ResourceDir.empty()) {
+    Invocation.setRuntimeResourcePath(options::ResourceDir);
+  }
+  
+  Invocation.updateRuntimeLibraryPaths();
+  Invocation.setDefaultPrebuiltCacheIfNecessary();
+  
+  llvm::errs() << "Prebuilt modules path: " << Invocation.getFrontendOptions().PrebuiltModuleCachePath << "\n";
+  
   symbolgraphgen::SymbolGraphOptions Options {
     options::OutputPath,
     llvm::Triple(options::Target),

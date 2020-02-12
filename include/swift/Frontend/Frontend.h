@@ -381,6 +381,14 @@ public:
   SerializationOptions
   computeSerializationOptions(const SupplementaryOutputPaths &outs,
                               bool moduleIsPublic) const;
+  
+  void updateRuntimeLibraryPaths();
+  
+  /// If we haven't explicitly passed -prebuilt-module-cache-path, set it to
+  /// the default value of <resource-dir>/<platform>/prebuilt-modules.
+  /// @note This should be called once, after search path options and frontend
+  ///       options have been parsed.
+  void setDefaultPrebuiltCacheIfNecessary();
 };
 
 /// A class which manages the state and execution of the compiler.
