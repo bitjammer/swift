@@ -339,6 +339,21 @@ public:
   /// Whether we're configured to track system intermodule dependencies.
   bool shouldTrackSystemDependencies() const;
 
+  enum class DocCheckMode {
+    /// Don't check doc comments.
+    Disabled,
+
+    /// Check that public declarations have doc comments at all.
+    PresenceOnly,
+
+    /// Check that public declarations have doc comments and
+    /// check that they are consistent with their declarations.
+    Consistency,
+  };
+
+  /// Opt-in option to enable checks for public declarations.
+  DocCheckMode CheckDocComments = DocCheckMode::Disabled;
+
 private:
   static bool canActionEmitDependencies(ActionType);
   static bool canActionEmitReferenceDependencies(ActionType);

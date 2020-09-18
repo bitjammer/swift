@@ -46,6 +46,7 @@ private:
   void computePlaygroundOptions();
   void computePrintStatsOptions();
   void computeTBDOptions();
+  void computeDocCommentOptions();
 
   bool setUpImmediateArgs();
 

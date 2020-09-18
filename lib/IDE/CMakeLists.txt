@@ -5,6 +5,7 @@ add_swift_host_library(swiftIDE STATIC
   CommentConversion.cpp
   CompletionInstance.cpp
   ConformingMethodList.cpp
+  DocCommentChecking.cpp
   ExprContextAnalysis.cpp
   Formatting.cpp
   FuzzyStringMatcher.cpp

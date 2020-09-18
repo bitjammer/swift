@@ -609,37 +609,11 @@ SymbolGraph::serializeDeclarationFragments(StringRef Key, Type T,
 
 bool SymbolGraph::isImplicitlyPrivate(const Decl *D,
                                       bool IgnoreContext) const {
-  // Don't record unconditionally private declarations
-  if (D->isPrivateStdlibDecl(/*treatNonBuiltinProtocolsAsPublic=*/false)) {
-    return true;
-  }
 
-  // Don't record effectively internal declarations if specified
-  if (Walker.Options.MinimumAccessLevel > AccessLevel::Internal &&
-      D->hasUnderscoredNaming()) {
-    return true;
-  }
-
-  // Don't include declarations with the @_spi attribute unless the
-  // access control filter is internal or below.
-  if (D->isSPI()) {
-    return Walker.Options.MinimumAccessLevel > AccessLevel::Internal;
-  }
-
-  if (const auto *Extension = dyn_cast<ExtensionDecl>(D)) {
-    if (const auto *Nominal = Extension->getExtendedNominal()) {
-      return isImplicitlyPrivate(Nominal, IgnoreContext);
-    }
-  }
-
-  if (const auto *VD = dyn_cast<ValueDecl>(D)) {
-    // Symbols must meet the minimum access level to be included in the graph.
-    if (VD->getFormalAccess() < Walker.Options.MinimumAccessLevel) {
-      return true;
-    }
-
-    // Special cases below.
-
+  return D->nameOrContextImpliesOmissionFromDocs(Walker.Options.MinimumAccessLevel,
+                                       /*Consider context*/ IgnoreContext,
+                                       /*Consider SPI hidden*/ true,
+                                        [&](const ValueDecl *VD) -> bool {
     auto BaseName = VD->getBaseName().userFacingName();
 
     // ${MODULE}Version{Number,String} in ${Module}.h
@@ -665,19 +639,8 @@ bool SymbolGraph::isImplicitlyPrivate(const Decl *D,
       return true;
     }
 
-    if (IgnoreContext) {
-      return false;
-    }
-  }
-
-  // Check up the parent chain. Anything inside a privately named
-  // thing is also private. We could be looking at the `B` of `_A.B`.
-  if (const auto *DC = D->getDeclContext()) {
-    if (const auto *Parent = DC->getAsDecl()) {
-      return isImplicitlyPrivate(Parent, IgnoreContext);
-    }
-  }
-  return false;
+    return false;
+  });
 }
 
 /// Returns `true` if the symbol should be included as a node in the graph.

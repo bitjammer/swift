@@ -744,6 +744,37 @@ public:
   /// not be serialized.
   bool canHaveComment() const;
 
+  /// `true` if the declaration has naming or context that implies
+  /// it should be "hidden" primarily for documentation.
+  ///
+  /// At minimum, the following declarations are considered "hidden"
+  /// as far as this function is concerned:
+  ///
+  /// \li Private Standard Library decls,
+  /// \li Decls with formal access level < `MinimumAccessLevel`,
+  /// \li Decls with `@_spi` if `ConsiderSPIHidden == true`,
+  /// \li Decls with names including leading underscores,
+  /// \li Decls that are flagged by a `CustomCheck`, or
+  /// \li Decls having ancestry matching any of the above.
+  ///
+  /// \see Decl::isPrivateStdlibDecl
+  /// \see Decl::hasUnderscoredNaming
+  /// \see Decl::isSPI
+  ///
+  /// \param MinAccessLevel The minimum access level the decl must
+  /// have in order to be considered "visible".
+  /// \param ConsiderContext If `true`, consider parent decls when
+  /// deciding this decl should be hidden. For example, `_Outer.Inner`
+  /// could indicate that `Inner` should be hidden hidden.
+  /// \param SPIIsInternal If `true`, consider decls with the `@_spi`
+  /// attribute to be internal when comparing against the `MinimumAccessLevel`.
+  /// \param CustomCheck Optional additional check to decide if a decl
+  /// should be hidden.
+  bool nameOrContextImpliesOmissionFromDocs(AccessLevel MinAccessLevel,
+      bool ConsiderContext,
+      bool SPIIsInternal,
+      std::function<bool(const ValueDecl *)> CustomCheck = nullptr) const;
+
   LLVM_READONLY
   DeclContext *getDeclContext() const {
     if (auto dc = Context.dyn_cast<DeclContext *>())

@@ -8265,3 +8265,56 @@ bool Decl::isPrivateToEnclosingFile() const {
     llvm_unreachable("everything else is a ValueDecl");
   }
 }
+
+bool Decl::nameOrContextImpliesOmissionFromDocs(AccessLevel MinAccessLevel,
+    bool ConsiderContext,
+    bool SPIIsInternal,
+    std::function<bool(const ValueDecl *)> CustomCheck) const {
+  if (isPrivateStdlibDecl(/*treatNonBuiltinProtocolsAsPublic=*/false)) {
+    return true;
+  }
+
+  if (MinAccessLevel > AccessLevel::Internal &&
+      hasUnderscoredNaming()) {
+    return true;
+  }
+
+  if (SPIIsInternal && isSPI()) {
+    return MinAccessLevel > AccessLevel::Internal;
+  }
+
+  if (const auto *Extension = dyn_cast<ExtensionDecl>(this)) {
+    if (const auto *Nominal = Extension->getExtendedNominal()) {
+      return Nominal->nameOrContextImpliesOmissionFromDocs(MinAccessLevel,
+          ConsiderContext,
+          SPIIsInternal);
+    }
+  }
+
+  if (const auto *VD = dyn_cast<ValueDecl>(this)) {
+    // Symbols must meet the minimum access level to be included in the graph.
+    if (VD->getFormalAccess() < MinAccessLevel) {
+      return true;
+    }
+
+    if (CustomCheck && CustomCheck(VD)) {
+      return true;
+    }
+  }
+
+  if (!ConsiderContext) {
+    return false;
+  }
+
+  // Check up the parent chain. Anything inside a privately named
+  // thing is also private. We could be looking at the `B` of `_A.B`.
+  if (const auto *DC = getDeclContext()) {
+    if (const auto *Parent = DC->getAsDecl()) {
+      return Parent->nameOrContextImpliesOmissionFromDocs(MinAccessLevel,
+                                                          ConsiderContext,
+                                                          SPIIsInternal);
+    }
+  }
+
+  return false;
+}

@@ -1183,3 +1183,20 @@ def disable_autolinking_runtime_compatibility_dynamic_replacements
                "compatibility library">;
 
 include "FrontendOptions.td"
+
+// Documentation
+
+def doc_check_Group : OptionGroup<"<swift doc comment options>">;
+
+def check_doc_comment_presence_only :
+  Flag<["-"], "check-doc-comment-presence-only">,
+  Group<doc_check_Group>,
+  Flags<[HelpHidden, FrontendOption, DoesNotAffectIncrementalBuild]>,
+  HelpText<"Check that public declarations have documentation comments.">;
+
+def check_doc_comment_consistency :
+  Flag<["-"], "check-doc-comment-consistency">,
+  Group<doc_check_Group>,
+  Flags<[HelpHidden, FrontendOption, NoInteractiveOption, DoesNotAffectIncrementalBuild]>,
+  HelpText<"Check that public declarations have documentation comments and "
+           "that they are consistent with their declarations.">;

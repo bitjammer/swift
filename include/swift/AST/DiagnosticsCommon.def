@@ -202,5 +202,25 @@ NOTE(found_attribute_candidate,none,
 ERROR(unknown_attribute,none,
       "unknown attribute '%0'", (StringRef))
 
+//------------------------------------------------------------------------------
+// MARK: Documentation
+//------------------------------------------------------------------------------
+
+WARNING(public_api_missing_doc_comment,none,
+        "public %0 %1 has no documentation comment",
+        (DescriptiveDeclKind, DeclName))
+
+WARNING(public_api_missing_param_description,none,
+        "%0 %1 has no description for parameter %2 in its documentation comment",
+        (DescriptiveDeclKind, DeclName, Identifier))
+
+WARNING(public_api_missing_return_description,none,
+        "%0 %1 returns a value but has no '- returns:' explanation in its documentation comment",
+        (DescriptiveDeclKind, DeclName))
+
+WARNING(public_api_missing_throws_description,none,
+        "%0 %1 marked as 'throws' but has no '- throws:' explanation in its documentation comment",
+        (DescriptiveDeclKind, DeclName))
+
 #define UNDEFINE_DIAGNOSTIC_MACROS
 #include "DefineDiagnosticMacros.h"

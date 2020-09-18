@@ -209,6 +209,7 @@ bool ArgsToFrontendOptionsConverter::convert(
   computeImportObjCHeaderOptions();
   computeImplicitImportModuleNames();
   computeLLVMArgs();
+  computeDocCommentOptions();
 
   return false;
 }
@@ -594,5 +595,18 @@ void ArgsToFrontendOptionsConverter::computeLLVMArgs() {
   using namespace options;
   for (const Arg *A : Args.filtered(OPT_Xllvm)) {
     Opts.LLVMArgs.push_back(A->getValue());
+  }
+}
+void ArgsToFrontendOptionsConverter::computeDocCommentOptions() {
+  using namespace options;
+  if (const Arg *A = Args.getLastArg(OPT_doc_check_Group)) {
+    Option Opt = A->getOption();
+    if (Opt.matches(OPT_check_doc_comment_presence_only)) {
+      Opts.CheckDocComments = FrontendOptions::DocCheckMode::PresenceOnly;
+    } else if (Opt.matches(OPT_check_doc_comment_consistency)) {
+      Opts.CheckDocComments = FrontendOptions::DocCheckMode::Consistency;
+    } else {
+      llvm_unreachable("Unknown doc_check_Group option!");
+    }
   }
 }

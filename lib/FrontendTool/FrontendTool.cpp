@@ -53,6 +53,7 @@
 #include "swift/Frontend/SerializedDiagnosticConsumer.h"
 #include "swift/Frontend/ModuleInterfaceLoader.h"
 #include "swift/Frontend/ModuleInterfaceSupport.h"
+#include "swift/IDE/DocCommentChecking.h"
 #include "swift/Immediate/Immediate.h"
 #include "swift/Index/IndexRecord.h"
 #include "swift/Option/Options.h"
@@ -1525,6 +1526,15 @@ static bool performCompileStepsPostSema(CompilerInstance &Instance,
   const auto &Invocation = Instance.getInvocation();
   const SILOptions &SILOpts = Invocation.getSILOptions();
   const FrontendOptions &opts = Invocation.getFrontendOptions();
+
+  if (opts.CheckDocComments != FrontendOptions::DocCheckMode::Disabled) {
+    DocCommentChecker DCC(Instance);
+    for (const auto *SF : Instance.getPrimarySourceFiles()) {
+      for (auto *TLD : SF->getTopLevelDecls()) {
+        DCC.walk(TLD);
+      }
+    }
+  }
 
   auto *mod = Instance.getMainModule();
   if (!opts.InputsAndOutputs.hasPrimaryInputs()) {
